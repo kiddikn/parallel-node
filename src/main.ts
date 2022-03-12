@@ -13,6 +13,7 @@ const sleepCast = async (i: number, msec: number): Promise<Output> => {
   const release = await semaphore.acquire()
   console.log(`acquire => ${i}`)
   await sleep(msec)
+  if (i === 4) throw new Error('oh no')
   console.log(new Date().toString() + ` => sleep ${msec}ms`)
   release()
   return { num: i, at: new Date().toString() }
@@ -20,7 +21,7 @@ const sleepCast = async (i: number, msec: number): Promise<Output> => {
 
 const semaphore = new Semaphore(3)
 const main = async () => {
-  const output: Output[] = await Promise.all([
+  const ps = await Promise.allSettled([
     sleepCast(1, 300),
     sleepCast(2, 300),
     sleepCast(3, 600),
@@ -30,6 +31,14 @@ const main = async () => {
     sleepCast(7, 2000),
     sleepCast(8, 1000),
   ])
+  console.log(ps)
+
+  const output: Output[] = []
+  ps.map((o) => {
+    if (o.status === 'fulfilled') {
+      output.push(o.value)
+    }
+  })
   console.log(output)
 }
 
